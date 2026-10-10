@@ -116,6 +116,7 @@ BonDriver_BDA.dllをコピーしてリネームしたものを配置してください。
 - BonDriver_BDA_SPHD-sample.ini
 - BonDriver_BDA-UHF-sample.ini
 - BonDriver_BDA-BSCS-sample.ini
+- BonDriver_BDA-DVBC-J83C-sample.ini (DVB-C / J.83C トランスモジュレーション受信用)
 
 BDASpecialプラグインにサンプルiniファイルが付属する場合はそちらを基に作成してください。
 また、iniファイルに設定できる各項目の説明は`BonDriver_BDA.sample.ini`を参照してください。

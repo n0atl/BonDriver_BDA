@@ -642,11 +642,13 @@ protected:
 		std::basic_string<TCHAR> sTuningSpaceName;		// EnumTuningSpaceで返すTuning Space名
 		long FrequencyOffset;							// 周波数オフセット値
 		unsigned int DVBSystemTypeNumber;				// TuningSpaceの種類番号
+		BOOL DeletePID002F;							// PID 0x002Fのパケットを削除
 		unsigned int TSMFMode;							// TSMFの処理モード
 		std::map<unsigned int, ChData> Channels;		// チャンネル番号とチャンネルデータ
 		DWORD dwNumChannel;								// チャンネル数
 		TuningSpaceData(void)
 			: FrequencyOffset(0),
+			  DeletePID002F(FALSE),
 			  dwNumChannel(0)
 		{
 		};
@@ -1095,13 +1097,16 @@ protected:
 	// TSMF処理が必要
 	BOOL m_bIsEnabledTSMF;
 
-	// ヌルパケット削除処理をリセット
+	// 現在のチューニング空間でPID 0x002Fを削除
+	BOOL m_bDeletePID002F;
+
+	// パケット削除処理をリセット
 	LONG m_lResetFilter;
 
-	// TSパケットサイズ(ヌルパケット削除用)
+	// TSパケットサイズ(パケット削除用)
 	size_t m_PacketSize;
 
-	// 前回処理したTSパケットバッファおよび作業用(ヌルパケット削除用)
+	// 前回処理したTSパケットバッファおよび作業用(パケット削除用)
 	std::vector<BYTE> m_FilterBuf;
 
 	// 最後にLockChannelを行った時のチューニングパラメータ

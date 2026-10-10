@@ -1,0 +1,36 @@
+name: Build BonDriver_BDA
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-2022
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        platform: [Win32, x64]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          persist-credentials: false
+      - name: Build DLL and dependencies
+        shell: pwsh
+        run: ./scripts/build.ps1 -Platform '${{ matrix.platform }}'
+      - name: Upload DLL and sample configuration
+        uses: actions/upload-artifact@v4
+        with:
+          name: BonDriver_BDA-DeletePID002F-${{ matrix.platform }}
+          path: |
+            ${{ matrix.platform }}/Release_Static/BonDriver_BDA.dll
+            doc/BonDriver_BDA.sample.ini
+            doc/BonDriver_BDA-UHF-sample.ini
+            doc/BonDriver_BDA-DVBC-J83C-sample.ini
+            doc/BUILD-DeletePID002F.md
+          if-no-files-found: error

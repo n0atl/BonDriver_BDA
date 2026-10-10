@@ -155,6 +155,7 @@ CBonTuner::CBonTuner()
 	m_dwCurChannel(CBonTuner::CHANNEL_INVALID),
 	m_nCurTone(CBonTuner::TONE_UNKNOWN),
 	m_bIsEnabledTSMF(FALSE),
+	m_bDeletePID002F(FALSE),
 	m_lResetFilter(0),
 	m_PacketSize(0),
 	m_hModuleTunerSpecials(NULL),
@@ -695,6 +696,8 @@ const BOOL CBonTuner::_SetChannel(const DWORD dwSpace, const DWORD dwChannel)
 	SleepWithMessageLoop(100);
 	PurgeTsStream();
 
+	m_bDeletePID002F = itSpace->second.DeletePID002F;
+
 	// TSMF処理設定
 	switch (itSpace->second.TSMFMode) {
 	case 0:		// OFF
@@ -1076,13 +1079,29 @@ DWORD WINAPI CBonTuner::DecodeProcThread(LPVOID lpParameter)
 						BYTE * newBuf = NULL;
 						size_t newBufSize = 0;
 						pSys->m_TSMFParser.ParseTsBuffer(pBuff->pbyBuff, pBuff->Size, &newBuf, &newBufSize, pSys->m_bDeleteNullPackets);
-						if (newBuf) {
+						if (newBuf && pSys->m_bDeletePID002F) {
+							// TSMF処理後の188バイトTSからPID 0x002Fを削除する
+							size_t wpos = 0;
+							for (size_t rpos = 0; rpos + 188 <= newBufSize; rpos += 188) {
+								WORD pid = ((newBuf[rpos + 1] << 8) | newBuf[rpos + 2]) & 0x1fff;
+								if (pid != 0x002f) {
+									if (wpos != rpos)
+										memmove(newBuf + wpos, newBuf + rpos, 188);
+									wpos += 188;
+								}
+							}
+							newBufSize = wpos;
+						}
+						if (newBuf && newBufSize > 0) {
 							TS_DATA * pNewTS = new TS_DATA(newBuf, (DWORD)newBufSize, FALSE);
 							pSys->m_DecodedTsBuff.Add(pNewTS);
 						}
+						else {
+							delete[] newBuf;
+						}
 						SAFE_DELETE(pBuff);
 					}
-					else if (pSys->m_bDeleteNullPackets) {
+					else if (pSys->m_bDeleteNullPackets || pSys->m_bDeletePID002F) {
 						if (::InterlockedExchange(&pSys->m_lResetFilter, 0)) {
 							// リセット
 							pSys->m_PacketSize = 0;
@@ -1117,8 +1136,9 @@ DWORD WINAPI CBonTuner::DecodeProcThread(LPVOID lpParameter)
 							}
 							else {
 								WORD pid = ((pSys->m_FilterBuf[rpos + 1] << 8) | pSys->m_FilterBuf[rpos + 2]) & 0x1fff;
-								if (pid != 0x1fff) {
-									// ヌルパケットでないので追加
+								if ((!pSys->m_bDeleteNullPackets || pid != 0x1fff) &&
+									(!pSys->m_bDeletePID002F || pid != 0x002f)) {
+									// 削除対象でないので追加
 									memcpy(pBuff->pbyBuff + wpos, pSys->m_FilterBuf.data() + rpos, 188);
 									wpos += 188;
 								}
@@ -2719,6 +2739,9 @@ void CBonTuner::ReadIniFile(void)
 
 		// TuningSpaceの種類番号
 		itSpace->second.DVBSystemTypeNumber = IniFileAccess.ReadKeyISectionData(L"DVBSystemTypeNumber", 0);
+
+		// PID 0x002Fの削除設定（チューニング空間ごと）
+		itSpace->second.DeletePID002F = IniFileAccess.ReadKeyBSectionData(L"DeletePID002F", FALSE);
 
 		// TSMFの処理モード
 		itSpace->second.TSMFMode = IniFileAccess.ReadKeyIValueMapSectionData(L"TSMFMode", 0, mapTSMFMode);
