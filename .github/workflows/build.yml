@@ -13,6 +13,7 @@ jobs:
     runs-on: windows-2022
     timeout-minutes: 30
     strategy:
+      fail-fast: false
       matrix:
         platform: [Win32, x64]
     steps:
