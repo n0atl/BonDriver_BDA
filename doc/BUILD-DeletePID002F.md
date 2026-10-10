@@ -1,6 +1,6 @@
 # PID 0x002F removal build
 
-GitHub Actions builds Win32 and x64 Release_Static DLLs on windows-2022.
+GitHub Actions builds Win32 and x64 DLLs in both Release and Release_Static configurations on windows-2022.
 The build uses VS 2022/v143 for all three projects; the original project files remain unchanged.
 Dependencies are checked out at the submodule revisions recorded in Git.
 Only BaseClasses, muparser and BonDriver_BDA are built. TBS.dll is not required for standard BDA reception.
@@ -17,5 +17,7 @@ Keep the existing matching INI file.
 To build locally with VS 2022 C++ tools, ATL and Windows SDK installed:
 
 ```powershell
-./scripts/build.ps1 -Platform x64
+./scripts/build.ps1 -Platform x64 -Configuration Release
 ```
+
+Release uses the dynamic Visual C++ runtime and requires the matching x86/x64 Visual C++ Redistributable. Release_Static includes the runtime in the DLL.

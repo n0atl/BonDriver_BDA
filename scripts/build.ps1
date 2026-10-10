@@ -1,6 +1,8 @@
 param(
     [ValidateSet('Win32', 'x64')]
-    [string]$Platform = 'x64'
+    [string]$Platform = 'x64',
+    [ValidateSet('Release', 'Release_Static')]
+    [string]$Configuration = 'Release'
 )
 $ErrorActionPreference = 'Stop'
 $sourceRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
@@ -20,7 +22,7 @@ foreach ($file in $required) {
 # Build projects directly: the upstream solution also lists unavailable plugins.
 # Use the VS 2022 compiler consistently for all three projects.
 $properties = @(
-    '/p:Configuration=Release_Static',
+    "/p:Configuration=$Configuration",
     "/p:Platform=$Platform",
     '/p:PlatformToolset=v143',
     ('/p:SolutionDir=' + $sourceRoot.Replace('\', '/') + '/')
@@ -33,6 +35,6 @@ foreach ($project in @(
     & $msbuild (Join-Path $sourceRoot $project) /m /t:Build /nologo @properties
     if ($LASTEXITCODE -ne 0) { throw "Build failed: $project (exit $LASTEXITCODE)" }
 }
-$dll = Join-Path $sourceRoot "$Platform/Release_Static/BonDriver_BDA.dll"
+$dll = Join-Path $sourceRoot "$Platform/$Configuration/BonDriver_BDA.dll"
 if (-not (Test-Path $dll)) { throw "DLL was not generated: $dll" }
 Write-Host "Built: $dll"

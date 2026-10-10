@@ -16,20 +16,21 @@ jobs:
       fail-fast: false
       matrix:
         platform: [Win32, x64]
+        configuration: [Release, Release_Static]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: recursive
           persist-credentials: false
       - name: Build DLL and dependencies
         shell: pwsh
-        run: ./scripts/build.ps1 -Platform '${{ matrix.platform }}'
+        run: ./scripts/build.ps1 -Platform '${{ matrix.platform }}' -Configuration '${{ matrix.configuration }}'
       - name: Upload DLL and sample configuration
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
-          name: BonDriver_BDA-DeletePID002F-${{ matrix.platform }}
+          name: BonDriver_BDA-DeletePID002F-${{ matrix.platform }}-${{ matrix.configuration }}
           path: |
-            ${{ matrix.platform }}/Release_Static/BonDriver_BDA.dll
+            ${{ matrix.platform }}/${{ matrix.configuration }}/BonDriver_BDA.dll
             doc/BonDriver_BDA.sample.ini
             doc/BonDriver_BDA-UHF-sample.ini
             doc/BonDriver_BDA-DVBC-J83C-sample.ini
